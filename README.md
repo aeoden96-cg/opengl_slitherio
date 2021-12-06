@@ -1,6 +1,7 @@
 # cg_slitherio_project
 
 Run project by running script run.sh from console, or by doing this:
+
     1. mkdir build
     2. cd build
     3. cmake ..
