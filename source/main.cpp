@@ -39,17 +39,9 @@
 #include "main.hpp"
 #include "Slither.hpp"
 
-//*********************************************************************************
-//	Pokazivac na glavni prozor i pocetna velicina.
-//*********************************************************************************
 
 GLuint window; 
 GLuint sub_width = 500, sub_height = 500; 
-
-//*********************************************************************************
-//	Function Prototypes.
-//*********************************************************************************
-
 
 GLuint VAO;
 GLuint programID;
@@ -59,6 +51,8 @@ glm::mat4 projection;
 Shader s;
 int RunMode = 1;		// Used as a boolean (1 or 0) for "on" and "off"
 
+int WindowHeight;
+int WindowWidth;
 // The next global variable controls the animation's state and speed.
 float CurrentAngle = 0.0f;			// Angle in degrees
 float AnimateStep = 1.0f;			// Rotation step per update
@@ -66,55 +60,73 @@ float AnimateStep = 1.0f;			// Rotation step per update
 // These variables set the dimensions of the rectanglar region we wish to view.
 const double Xmin = 0.0, Xmax = 3.0;
 const double Ymin = 0.0, Ymax = 3.0;
-Slither sl(10,20);
+float ss= -0.05;
+Slither sl(0,0);
+
 bool init_data(); // nasa funkcija za inicijalizaciju podataka
 
-// glutKeyboardFunc is called below to set this function to handle
-//		all "normal" key presses.
+
+
+void glutPassiveMotionFunc(int x, int y ) {
+
+    float xPos = ((float)x)/((float)(WindowWidth-1));
+    float yPos = ((float)y)/((float)(WindowHeight-1));
+
+    sl.hop(2*xPos-1,-2*yPos+1);
+
+    glutPostRedisplay();
+
+}
+
 void myKeyboardFunc( unsigned char key, int x, int y )
 {
 	switch ( key ) {
 	case 'r':
-		RunMode = 1-RunMode;		// Toggle to opposite value
-		if ( RunMode==1 ) {
-			glutPostRedisplay();
-		}
+//		RunMode = 1-RunMode;		// Toggle to opposite value
+//		if ( RunMode==1 ) {
+//			glutPostRedisplay();
+//		}
 		break;
 	case 's':
-		RunMode = 1;
-		myDisplay();
-		RunMode = 0;
+//		RunMode = 1;
+//		myDisplay();
+//		RunMode = 0;
 		break;
+    case 'w':
+        sl.hop(ss,ss);
+        ss -= 0.05;
+        break;
+    case 'd':
+        sl.add(0.5,-0.5);
+        break;
+
 	case 27:	// Escape key
 		exit(1);
 	}
+    myDisplay();
 }
 
-// glutSpecialFunc is called below to set this function to handle
-//		all "special" key presses.  See glut.h for the names of
-//		special keys.
 void mySpecialKeyFunc( int key, int x, int y )
 {
 	switch ( key ) {
 	case GLUT_KEY_UP:		
-		if ( AnimateStep < 1.0e3) {			// Avoid overflow problems
-			AnimateStep *= sqrt(2.0);		// Increase the angle increment
-		}
+//		if ( AnimateStep < 1.0e3) {			// Avoid overflow problems
+//			AnimateStep *= sqrt(2.0);		// Increase the angle increment
+//		}
+        sl.hop(-0.5,-0.5);
 		break;
 	case GLUT_KEY_DOWN:
-		if (AnimateStep>1.0e-6) {		// Avoid underflow problems.
-			AnimateStep /= sqrt(2.0);	// Decrease the angle increment
-		}
+//		if (AnimateStep>1.0e-6) {		// Avoid underflow problems.
+//			AnimateStep /= sqrt(2.0);	// Decrease the angle increment
+//		}
+    sl.add(0.5,-0.5);
 		break;
 	}
 }
 
-//*********************************************************************************
-//	Glavni program.
-//*********************************************************************************
-
 int main(int argc, char ** argv)
 {
+
 	// Sljedeci blok sluzi kao bugfix koji je opisan gore
 	#ifdef LINUX_UBUNTU_SEGFAULT
         //ss2
@@ -133,6 +145,8 @@ int main(int argc, char ** argv)
 	glutReshapeFunc(resizeWindow);
 	glutDisplayFunc(myDisplay);
 	glutKeyboardFunc( myKeyboardFunc );			// Handles "normal" ascii symbols
+    //glutMouseFunc(myMouseFunc);
+    glutPassiveMotionFunc(glutPassiveMotionFunc);
 	glutSpecialFunc( mySpecialKeyFunc );		// Handles "special" keyboard keys
 
 	glewExperimental = GL_TRUE;
@@ -144,11 +158,22 @@ int main(int argc, char ** argv)
 	glEnable(GL_DEPTH_TEST);
 
 
-//    Slither sl(10,20);
-//    sl.add(11,20);
-//    sl.add(12,20);
-//    sl.hop(13.5,20);
-//    std::cout << sl.toString();
+    sl.add(0.05,0.05);
+    sl.add(0.1,0.1);
+    sl.add(0.1,0.1);
+    sl.add(0.15,0.15);
+    sl.add(0.2,0.2);
+    sl.add(0.2,0.25);
+    sl.add(0.2,0.30);
+//      std::cout << sl.toString();
+//      sl.hop(-0.1,-0.1);
+//      std::cout << sl.toString();
+//    std::vector<GLfloat> t  = sl.getCoords();
+//    for(auto i: t)
+//        std::cout << i << "\n";
+//
+//    std::cout << "Size " << sizeof(GLfloat)*sl.getLength()*3 << "\n";
+
 
 	glutMainLoop();
     return 0;
@@ -163,80 +188,13 @@ bool init_data()
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 
 	// Antialijasiranje poligona, ovisno o implementaciji
-	glEnable(GL_POLYGON_SMOOTH);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glHint(GL_POLYGON_SMOOTH, GL_DONT_CARE);
-	
-	// Stvori jedan VAO i njegov identifikator pohrani u VAO
-	glGenVertexArrays(1, &VAO);
-	// Učini taj VAO "trenutnim". Svi pozivi glBindBuffer(...) ispod upisuju veze u trenutni (dakle ovaj) VAO.
-	glBindVertexArray(VAO);
-
-	// An array of 9 vectors which represents 9 vertices
-	static const GLfloat g_vertex_buffer_data[] = {
-		0.3, 1.0, 0.5,
-		2.7, 0.85, 0.0,
-		2.7, 1.15, 0.0,
-		2.53, 0.71, 0.5,
-		1.46, 2.86, 0.0,
-		1.2, 2.71, 0.0,
-		1.667, 2.79, 0.5,
-		0.337, 0.786, 0.0,
-		0.597, 0.636, 0.0,
-	};
-
-	// This will identify our vertex buffer
-	GLuint VBO;
-	// Generate 1 buffer, put the resulting identifier in VBO
-	glGenBuffers(1, &VBO);
-	// The following commands will talk about our 'VBO' buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// Give our vertices to OpenGL.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	// An array of 9 rgbs which represents colors for 9 vertices
-	static const GLfloat g_color_buffer_data[] = {
-	   1.0f, 0.0f, 0.0f, 1.0f,  // red
-	   1.0f, 0.0f, 0.0f, 1.0f,  // red
-	   1.0f, 0.0f, 0.0f, 1.0f,  // red
-	   0.0f, 1.0f, 0.0f, 1.0f,  // green
-	   0.0f, 1.0f, 0.0f, 1.0f,  // green
-	   0.0f, 1.0f, 0.0f, 1.0f,  // green
-	   0.0f, 0.0f, 1.0f, 1.0f,  // blue
-	   0.0f, 0.0f, 1.0f, 1.0f,  // blue
-	   0.0f, 0.0f, 1.0f, 1.0f,  // blue
-	};
-
-    // Podesi da se 0. atribut dohvaca iz vertex spremnika
-    glVertexAttribPointer(
-            0,                  // attribute 0.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-    );
-
-    // This will identify our color buffer
-	GLuint VBO_color;
-	// Generate 1 buffer, put the resulting identifier in VBO_color
-	glGenBuffers(1, &VBO_color);
-	// The following commands will talk about our 'VBO_color' buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_color);
-	// Give our vertices to OpenGL.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW); 
+//	glEnable(GL_POLYGON_SMOOTH);
+//	glEnable(GL_BLEND);
+//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glHint(GL_POLYGON_SMOOTH, GL_DONT_CARE);
+//
 
 
-	// Podesi da se 1. atribut dohvaca iz color spremnika
-	glVertexAttribPointer(
-	   1,                  // attribute 1.
-	   4,                  // size
-	   GL_FLOAT,           // type
-	   GL_FALSE,           // normalized?
-	   0,                  // stride
-	   (void*)0            // array buffer offset
-	); 
 
 	std::cout << "Going to load programs... " << std::endl << std::flush;
 
@@ -247,105 +205,70 @@ bool init_data()
 	}
 
 	// Get a handle for our "MVP" uniform for later when drawing...
-	MVPMatrixID = glGetUniformLocation(programID, "MVP");
+	//MVPMatrixID = glGetUniformLocation(programID, "MVP");
+
+    glPointSize(5.0);
+
 
 	return true;
 }
 
-//*********************************************************************************
-//	Osvjezavanje prikaza. (nakon preklapanja prozora) 
-//*********************************************************************************
 
-void myDisplay()
-{
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
- 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-	if (RunMode==1) {
-		// Calculate animation parameters
+void myDisplay() {
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (RunMode == 1) {
+        // Calculate animation parameters
         CurrentAngle += AnimateStep;
-		if ( CurrentAngle > 360.0 ) {
-			CurrentAngle -= 360.0*floor(CurrentAngle/360.0);	// Don't allow overflow
-		}
-	}
-  
- 	// Model matrix : 
- 	glm::mat4 model = glm::mat4(1.0f);
+        if (CurrentAngle > 360.0) {
+            CurrentAngle -= 360.0 * floor(CurrentAngle / 360.0);    // Don't allow overflow
+        }
+    }
 
- 	model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
+    // Model matrix :
+    //glm::mat4 model = glm::mat4(1.0f);
+
+    //model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
 
 // 	model = glm::rotate (model,
 //                          (float) (CurrentAngle*M_PI/180.0),
 //                          glm::vec3(0.0f, 0.0f, 1.0f));
 
- 	model = glm::translate (model,glm::vec3(-1.5f, -1.5f, 0.0f));
+    //model = glm::translate (model,glm::vec3(-1.5f, -1.5f, 0.0f));
 
- 	// Our ModelViewProjection : multiplication of our 2 matrices
- 	glm::mat4 mvp = projection * model; // Kasnije se mnozi matrica puta tocka - model matrica mora biti najbliza tocki
+    // Our ModelViewProjection : multiplication of our 2 matrices
+    //glm::mat4 mvp = projection * model; // Kasnije se mnozi matrica puta tocka - model matrica mora biti najbliza tocki
 
 
-
-    // Stvori jedan VAO i njegov identifikator pohrani u VAO
+    //DATA POINTS
     glGenVertexArrays(1, &VAO);
-    // Učini taj VAO "trenutnim". Svi pozivi glBindBuffer(...) ispod upisuju veze u trenutni (dakle ovaj) VAO.
     glBindVertexArray(VAO);
-
-
-    static const GLfloat * my_data = sl.getCoordinates();
-
+    const std::vector<GLfloat> my_data = sl.getCoords();
     GLuint VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(my_data), my_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * sl.getLength() * 3, &my_data[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
 
 
-
-
-    glVertexAttribPointer(
-            1,                  // attribute 1.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-    );
-
-
-
-
-
-    // Postavi da se kao izvor toka vertexa koristi VAO čiji je identifikator VAO
-	glBindVertexArray(VAO);
-
-	// omogući slanje atributa nula shaderu - pod indeks 0 u init smo povezali pozicije vrhova (x,y,z)
-	glEnableVertexAttribArray(0);
-	// omogući slanje atributa jedan shaderu - pod indeks 1 u init smo povezali boje vrhova (x,y,z)
-	glEnableVertexAttribArray(1);
-
-	// Zatraži da shaderima upravlja naš program čiji je identifikator programID
-	//glUseProgram(programID);
+    glEnableVertexAttribArray(0);
     s.use();
 
-	// Send our transformation to the currently bound shader, in the "MVP" uniform
-	// This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-	glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
+    //glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-	glDrawArrays(GL_TRIANGLES, 0, 9); // Starting from vertex 0; 9 vertices total -> 3 triangles
+    //glDrawArrays(GL_TRIANGLES, 0, 9); // Starting from vertex 0; 9 vertices total -> 3 triangles
+    glDrawArrays(GL_POINTS, 0, sl.getLength());
 
-	// onemogući slanje atributa nula i jedan shaderu
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	
-	if ( RunMode==1 ) {
-		glutPostRedisplay();	// Trigger an automatic redraw for animation
-	}
-    delete[] my_data;
-	glutSwapBuffers();
+    glDisableVertexAttribArray(0);
+//	glDisableVertexAttribArray(1);
+
+//	if ( RunMode==1 ) {
+//		glutPostRedisplay();	// Trigger an automatic redraw for animation
+//	}
+    glutSwapBuffers();
+    glutPostRedisplay();
 }
-
-//*********************************************************************************
-//	Promjena velicine prozora.
-//*********************************************************************************
 
 void resizeWindow(int w, int h)
 {
@@ -361,6 +284,8 @@ void resizeWindow(int w, int h)
 	//		aspect ratio of the scene we want to view.
 	w = (w==0) ? 1 : w;
 	h = (h==0) ? 1 : h;
+    WindowHeight = (h>1) ? h : 2;
+    WindowWidth = (w>1) ? w : 2;
 	if ( (Xmax-Xmin)/w < (Ymax-Ymin)/h ) {
 		scale = ((Ymax-Ymin)/h)/((Xmax-Xmin)/w);
 		center = (Xmax+Xmin)/2;
