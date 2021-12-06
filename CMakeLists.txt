@@ -11,7 +11,11 @@ add_library(SHADER      util/Shader.cpp util/Shader.h)
 set_target_properties(SHADER    PROPERTIES PUBLIC_HEADER util/Shader.h)
 target_include_directories (SHADER PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_EXECUTABLE(PROJECT source/main.cpp source/main.hpp)
+ADD_EXECUTABLE(PROJECT
+        source/main.cpp
+        source/main.hpp
+        source/Slither.cpp
+        source/Slither.hpp)
 
 include_directories(
 ${OPENGL_INCLUDE_DIRS}

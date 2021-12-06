@@ -37,6 +37,7 @@
 // Nasa pomocna biblioteka za ucitavanje, prevodenje i linkanje programa shadera
 #include "util/Shader.h"
 #include "main.hpp"
+#include "Slither.hpp"
 
 //*********************************************************************************
 //	Pokazivac na glavni prozor i pocetna velicina.
@@ -65,7 +66,7 @@ float AnimateStep = 1.0f;			// Rotation step per update
 // These variables set the dimensions of the rectanglar region we wish to view.
 const double Xmin = 0.0, Xmax = 3.0;
 const double Ymin = 0.0, Ymax = 3.0;
-
+Slither sl(10,20);
 bool init_data(); // nasa funkcija za inicijalizaciju podataka
 
 // glutKeyboardFunc is called below to set this function to handle
@@ -142,8 +143,15 @@ int main(int argc, char ** argv)
 	// Omogući uporabu Z-spremnika
 	glEnable(GL_DEPTH_TEST);
 
+
+//    Slither sl(10,20);
+//    sl.add(11,20);
+//    sl.add(12,20);
+//    sl.hop(13.5,20);
+//    std::cout << sl.toString();
+
 	glutMainLoop();
-    	return 0;
+    return 0;
 }
 
 //*********************************************************************************
@@ -266,16 +274,47 @@ void myDisplay()
 
  	model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
 
- 	model = glm::rotate (model,
-                          (float) (CurrentAngle*M_PI/180.0),
-                          glm::vec3(0.0f, 0.0f, 1.0f));
+// 	model = glm::rotate (model,
+//                          (float) (CurrentAngle*M_PI/180.0),
+//                          glm::vec3(0.0f, 0.0f, 1.0f));
 
  	model = glm::translate (model,glm::vec3(-1.5f, -1.5f, 0.0f));
 
  	// Our ModelViewProjection : multiplication of our 2 matrices
  	glm::mat4 mvp = projection * model; // Kasnije se mnozi matrica puta tocka - model matrica mora biti najbliza tocki
-	
-	// Postavi da se kao izvor toka vertexa koristi VAO čiji je identifikator VAO
+
+
+
+    // Stvori jedan VAO i njegov identifikator pohrani u VAO
+    glGenVertexArrays(1, &VAO);
+    // Učini taj VAO "trenutnim". Svi pozivi glBindBuffer(...) ispod upisuju veze u trenutni (dakle ovaj) VAO.
+    glBindVertexArray(VAO);
+
+
+    static const GLfloat * my_data = sl.getCoordinates();
+
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(my_data), my_data, GL_STATIC_DRAW);
+
+
+
+
+    glVertexAttribPointer(
+            1,                  // attribute 1.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+    );
+
+
+
+
+
+    // Postavi da se kao izvor toka vertexa koristi VAO čiji je identifikator VAO
 	glBindVertexArray(VAO);
 
 	// omogući slanje atributa nula shaderu - pod indeks 0 u init smo povezali pozicije vrhova (x,y,z)
@@ -300,7 +339,7 @@ void myDisplay()
 	if ( RunMode==1 ) {
 		glutPostRedisplay();	// Trigger an automatic redraw for animation
 	}
-
+    delete[] my_data;
 	glutSwapBuffers();
 }
 
