@@ -71,8 +71,10 @@ void glutPassiveMotionFunc(int x, int y ) {
 
     float xPos = ((float)x)/((float)(WindowWidth-1));
     float yPos = ((float)y)/((float)(WindowHeight-1));
-
-    sl.hop(2*xPos-1,-2*yPos+1);
+    xPos =2*xPos-1;
+    yPos=-2*yPos+1;
+    sl.changeDirection(glm::degrees(glm::atan(yPos,xPos)));
+    sl.hop();
 
     glutPostRedisplay();
 
@@ -93,11 +95,11 @@ void myKeyboardFunc( unsigned char key, int x, int y )
 //		RunMode = 0;
 		break;
     case 'w':
-        sl.hop(ss,ss);
+        sl.hop();
         ss -= 0.05;
         break;
     case 'd':
-        sl.add(0.5,-0.5);
+        sl.add();
         break;
 
 	case 27:	// Escape key
@@ -113,13 +115,13 @@ void mySpecialKeyFunc( int key, int x, int y )
 //		if ( AnimateStep < 1.0e3) {			// Avoid overflow problems
 //			AnimateStep *= sqrt(2.0);		// Increase the angle increment
 //		}
-        sl.hop(-0.5,-0.5);
+        sl.hop();
 		break;
 	case GLUT_KEY_DOWN:
 //		if (AnimateStep>1.0e-6) {		// Avoid underflow problems.
 //			AnimateStep /= sqrt(2.0);	// Decrease the angle increment
 //		}
-    sl.add(0.5,-0.5);
+    sl.add();
 		break;
 	}
 }
@@ -158,13 +160,20 @@ int main(int argc, char ** argv)
 	glEnable(GL_DEPTH_TEST);
 
 
-    sl.add(0.05,0.05);
-    sl.add(0.1,0.1);
-    sl.add(0.1,0.1);
-    sl.add(0.15,0.15);
-    sl.add(0.2,0.2);
-    sl.add(0.2,0.25);
-    sl.add(0.2,0.30);
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
+    sl.add();
 //      std::cout << sl.toString();
 //      sl.hop(-0.1,-0.1);
 //      std::cout << sl.toString();

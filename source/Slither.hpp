@@ -1,24 +1,38 @@
 #include <deque>
 #include <stdexcept>
 #include <string>
-
+#include <glm/glm.hpp>
 struct Coord{
-    Coord(float x,float y):x(x),y(y),z(0){}
+    Coord(float x,float y):pos(glm::vec2(x,y)),z(0),dir(glm::vec2(1,0)){}
     std::string toString() const{
         std::stringstream s;
-        s << "(" << x << ", " << y << ")";
+        s << "(" << pos.x << ", " << pos.y << ")";
         return s.str();
     }
-    float x;
-    float y;
+    void normalize(){
+        pos = glm::normalize(pos);
+    }
+
+    void changeDirectionForce(glm::vec2 newdir){
+        newdir = glm::normalize(newdir);
+        dir = newdir;
+    }
+    void changeDirection(glm::vec2 newdir){
+        newdir = glm::normalize(newdir);
+        dir = glm::normalize(newdir + dir);
+    }
+
+
+    glm::vec2 pos;
     float z;
+    glm::vec2 dir;
 };
 
 class Slither{
 private:
 
     float radius = 5;
-    std::pair<GLfloat,GLfloat> direction = std::pair(1,0);
+    GLfloat dir = 0;
 
 public:
     std::deque<Coord> snake;
@@ -28,27 +42,44 @@ public:
     unsigned getLength(){
         return snake.size();
     }
-    void changeDirection(GLfloat x,GLfloat y){
-        direction=std::pair(x,y);
+    void changeDirection(GLfloat fi){
+        if(fi > 360) fi -=360;
+        if(fi < 0) fi+=360;
+        dir=fi;
     }
-    void add(float x, float y){
-        snake.push_back(Coord(x,y));
+    void add(){
+        GLfloat rads = glm::radians(dir);
+        Coord newCoords = Coord(-glm::cos(rads)*snake.size()*0.06,-glm::sin(rads)*snake.size()*0.06);
+        Coord lastChunk = snake.back();
+
+        newCoords.changeDirectionForce(lastChunk.pos-newCoords.pos);
+
+        snake.push_back(newCoords);
         //hop(x,y);
     }
-    void hop2(int dir, float offset){
-        Coord temp = Coord(snake.front().x+offset,snake.front().y);
-        for (auto &chunk :snake)
-            std::swap(chunk, temp);
-    }
-    void hop(float x,float y){
-        Coord temp = Coord(x,y);
 
-        for (int i=0; i< snake.size();i++){
-            Coord temp2 = Coord(snake[i].x,snake[i].y);
-            snake[i].x= temp.x;
-            snake[i].y= temp.y;
-            temp.x = temp2.x;
-            temp.y= temp2.y;
+    void hop(){
+        Coord head = snake.front();
+        GLfloat rads = glm::radians(dir);
+        Coord newChunk = Coord(glm::cos(rads)*0.003+head.pos.x,glm::sin(rads)*0.003+head.pos.y);
+
+        float ampl = glm::length(newChunk.pos-head.pos);
+
+
+
+
+        for (auto & i : snake){
+              Coord newt(i.dir.x,i.dir.y);
+              newt.changeDirection(newChunk.pos - i.pos);
+              newt.normalize();
+
+              newt.pos = newt.pos*ampl+i.pos;
+//            Coord temp2 = Coord(i.x,i.y);
+//            i.x= temp.x;
+//            i.y= temp.y;
+//            temp.x = temp2.x;
+//            temp.y= temp2.y;
+              std::swap(i,newt);
         }
 
 
@@ -64,8 +95,8 @@ public:
     std::vector<GLfloat> getCoords(){
         std::vector<GLfloat> T;
         for(const auto& c: snake){
-            T.push_back(c.x);
-            T.push_back(c.y);
+            T.push_back(c.pos.x);
+            T.push_back(c.pos.y);
             T.push_back(c.z);
         }
         return T;
@@ -77,8 +108,8 @@ public:
         int i=0;
         for (auto &chunk :snake)
         {
-            q[i]=chunk.x;
-            q[i+1] =chunk.y;
+            q[i]=chunk.pos.x;
+            q[i+1] =chunk.pos.y;
             q[i+2]= 0;
             i+=3;
         }
