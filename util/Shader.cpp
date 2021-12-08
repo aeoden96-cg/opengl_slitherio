@@ -20,7 +20,7 @@ void Shader::checkCompileErrors(unsigned int shader, const std::string& type)   
         if (!success)
         {
             glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
-            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+            std::cout << "      ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
         }
     }
     else
@@ -29,7 +29,7 @@ void Shader::checkCompileErrors(unsigned int shader, const std::string& type)   
         if (!success)
         {
             glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
-            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+            std::cout << "      ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
         }
     }
 }
@@ -94,8 +94,11 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
         i++;
 
     }
-    //std::cout << "Number of shaders: " << shaders.size()<<std::endl;
+    std::cout << "Number of shaders: " << shaders.size()<<std::endl;
+    for (const auto& [shader_id, shader_path] : shaders) {
+        std::cout<< "     " << shader_id << shader_path <<std::endl;
 
+    }
 
     for (const auto& [shader_id, shader_path] : shaders) {
 
@@ -119,7 +122,7 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
         }
         catch (std::ifstream::failure& e)
         {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+            std::cout << "      ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
         }
         //std::cout << "      Successful read"<< std::endl;
         //std::cout << "      Length: "<<code.length() <<std::endl;

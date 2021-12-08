@@ -8,7 +8,7 @@ layout(location = 0) in vec4 vertexPosition_modelspace;
 //out vec4 fragmentColor;
 
 // Values that stay constant for the whole mesh.
-//uniform mat4 MVP;
+uniform mat4 MVP;
 
 void main(){
 

@@ -207,7 +207,13 @@ bool init_data()
 
 	std::cout << "Going to load programs... " << std::endl << std::flush;
 
-	programID = s.load_shaders({"SimpleVertexShader.vert", "SimpleFragmentShader.frag","" , "" , ""});
+	programID = s.load_shaders({
+        "SimpleVertexShader.vert",
+        "SimpleFragmentShader.frag",
+        "" ,
+        "TessControl.tesc" ,
+        "TessEval.tese"});
+
 	if(programID==0) {
 		std::cout << "Zbog grešaka napuštam izvođenje programa." << std::endl;
 		return false;
@@ -227,49 +233,58 @@ void myDisplay() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (RunMode == 1) {
-        // Calculate animation parameters
-        CurrentAngle += AnimateStep;
-        if (CurrentAngle > 360.0) {
-            CurrentAngle -= 360.0 * floor(CurrentAngle / 360.0);    // Don't allow overflow
-        }
-    }
-
     sl.hop();
 
-    // Model matrix :
-    //glm::mat4 model = glm::mat4(1.0f);
 
+    glm::mat4 model = glm::mat4(1.0f);
     //model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
-
-// 	model = glm::rotate (model,
-//                          (float) (CurrentAngle*M_PI/180.0),
-//                          glm::vec3(0.0f, 0.0f, 1.0f));
-
-    //model = glm::translate (model,glm::vec3(-1.5f, -1.5f, 0.0f));
-
-    // Our ModelViewProjection : multiplication of our 2 matrices
-    //glm::mat4 mvp = projection * model; // Kasnije se mnozi matrica puta tocka - model matrica mora biti najbliza tocki
-
+    glm::mat4 view(1.0f);
+    view = glm::lookAt(sl.head()+glm::vec3(0,0,1),sl.head(),glm::vec3(0,1,0));
+    glm::mat4 mvp = view * model;
 
     //DATA POINTS
+//    glGenVertexArrays(1, &VAO);
+//    glBindVertexArray(VAO);
+//    const std::vector<GLfloat> my_data = sl.getCoords();
+//    GLuint VBO;
+//    glGenBuffers(1, &VBO);
+//    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * sl.getLength() * 3, &my_data[0], GL_DYNAMIC_DRAW);
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
+//
+//
+//    glEnableVertexAttribArray(0);
+//
+//    glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
+//    //glDrawArrays(GL_TRIANGLES, 0, 9); // Starting from vertex 0; 9 vertices total -> 3 triangles
+//    glDrawArrays(GL_POINTS, 0, sl.getLength());
+
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-    const std::vector<GLfloat> my_data = sl.getCoords();
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * sl.getLength() * 3, &my_data[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
-
-
     glEnableVertexAttribArray(0);
+    const std::vector<GLfloat> my_data = { 2.0f, 25.0f, 0.5f, 8.0f};
+    GLuint vertexbuffer;
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*my_data.size(),  &my_data[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(
+            0,                  // attribute 0.
+            4,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+    );
+
     s.use();
 
     //glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-    //glDrawArrays(GL_TRIANGLES, 0, 9); // Starting from vertex 0; 9 vertices total -> 3 triangles
-    glDrawArrays(GL_POINTS, 0, sl.getLength());
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glPatchParameteri(GL_PATCH_VERTICES,1);
+    glDrawArrays(GL_PATCHES,0,1);
+
+
 
     glDisableVertexAttribArray(0);
 //	glDisableVertexAttribArray(1);

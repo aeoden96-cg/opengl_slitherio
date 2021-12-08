@@ -54,7 +54,7 @@ struct Coord{
 class Slither{
 private:
 
-    float radius = 5;
+    float radius = 0.2;
     GLfloat dir = 0;
     const float diff;
 
@@ -67,6 +67,9 @@ public:
     }
     unsigned getLength(){
         return snake.size();
+    }
+    glm::vec3 head(){
+        return {snake.front().pos.x,snake.front().pos.y,snake.front().z};
     }
     void changeDirection(GLfloat fi){
         if(fi > 360) fi -=360;
@@ -136,7 +139,9 @@ public:
         for(const auto& c: snake){
             T.push_back(c.pos.x);
             T.push_back(c.pos.y);
-            T.push_back(c.z);
+            //T.push_back(c.z);
+            T.push_back(radius);
+            T.push_back(radius);
         }
         return T;
     }
