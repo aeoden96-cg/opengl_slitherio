@@ -94,13 +94,13 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
         i++;
 
     }
-    std::cout << "num of shaders" << shaders.size()<<std::endl;
+    //std::cout << "Number of shaders: " << shaders.size()<<std::endl;
 
 
     for (const auto& [shader_id, shader_path] : shaders) {
 
 
-        std::cout << "\n\nStart shader:[" << shader_id << " "  << shader_path << "]\n";
+        std::cout << "Shader:[" << shader_id << " "  << shader_path << "]\n";
         std::string code;
         std::ifstream file;
         file.exceptions (std::ifstream::failbit | std::ifstream::badbit);
@@ -108,7 +108,7 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
         {
 
             std::stringstream stream;
-            std::cout << shader_path.c_str() <<std::endl;
+            //std::cout << shader_path.c_str() <<std::endl;
             file.open(shader_path.c_str());
 
             stream << file.rdbuf();
@@ -121,8 +121,8 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
         {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
         }
-        std::cout << "      successful read"<< std::endl;
-        std::cout << "      "<<code.length() <<std::endl;
+        //std::cout << "      Successful read"<< std::endl;
+        //std::cout << "      Length: "<<code.length() <<std::endl;
 
 
 
@@ -138,7 +138,7 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
 
 
     }
-    std::cout << "SHADERS COMPILED" << std::endl;
+    std::cout << "Shaders comiled." << std::endl;
     // shader Program
     ID = glCreateProgram();
     for (auto k : shader_compiled_ids){

@@ -61,7 +61,7 @@ float AnimateStep = 1.0f;			// Rotation step per update
 const double Xmin = 0.0, Xmax = 3.0;
 const double Ymin = 0.0, Ymax = 3.0;
 float ss= -0.05;
-Slither sl(0,0);
+Slither sl(0,0,0.1f);
 
 bool init_data(); // nasa funkcija za inicijalizaciju podataka
 
@@ -74,7 +74,7 @@ void glutPassiveMotionFunc(int x, int y ) {
     xPos =2*xPos-1;
     yPos=-2*yPos+1;
     sl.changeDirection(glm::degrees(glm::atan(yPos,xPos)));
-    sl.hop();
+
 
     glutPostRedisplay();
 
@@ -234,6 +234,8 @@ void myDisplay() {
             CurrentAngle -= 360.0 * floor(CurrentAngle / 360.0);    // Don't allow overflow
         }
     }
+
+    sl.hop();
 
     // Model matrix :
     //glm::mat4 model = glm::mat4(1.0f);

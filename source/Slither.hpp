@@ -2,30 +2,53 @@
 #include <stdexcept>
 #include <string>
 #include <glm/glm.hpp>
+
+bool approximatelyEqual(float a, float b, float epsilon)
+{
+    return fabs(a - b) <= ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+}
+
+bool essentiallyEqual(float a, float b, float epsilon)
+{
+    return fabs(a - b) <= ( (fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+}
+
+bool definitelyGreaterThan(float a, float b, float epsilon)
+{
+    return (a - b) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+}
+
+bool definitelyLessThan(float a, float b, float epsilon)
+{
+    return (b - a) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+}
+
 struct Coord{
-    Coord(float x,float y):pos(glm::vec2(x,y)),z(0),dir(glm::vec2(1,0)){}
+    glm::vec2 pos;
+    float z;
+    glm::vec2 dir;
+
+    Coord( glm::vec2 position , glm::vec2 direction):pos(position),dir(direction),z(0){}
+
     std::string toString() const{
         std::stringstream s;
         s << "(" << pos.x << ", " << pos.y << ")";
         return s.str();
     }
-    void normalize(){
-        pos = glm::normalize(pos);
+    void setDirection(glm::vec2 new_dir){
+        dir = new_dir;
     }
 
-    void changeDirectionForce(glm::vec2 newdir){
-        newdir = glm::normalize(newdir);
-        dir = newdir;
+    float getMaxDistance() const{
+        return glm::length(dir-pos);
     }
-    void changeDirection(glm::vec2 newdir){
-        newdir = glm::normalize(newdir);
-        dir = glm::normalize(newdir + dir);
+
+    glm::vec2 unitStep(){
+        return glm::vec2(dir-pos)/getMaxDistance();
     }
 
 
-    glm::vec2 pos;
-    float z;
-    glm::vec2 dir;
+
 };
 
 class Slither{
@@ -33,11 +56,14 @@ private:
 
     float radius = 5;
     GLfloat dir = 0;
+    const float diff;
 
 public:
     std::deque<Coord> snake;
-    Slither(float x,float y){
-        snake.push_back(Coord(x,y));
+    Slither(float x,float y,float diff):diff(diff){
+        //push in snake HEAD
+        //don't use head DIRECTION
+        snake.push_back(Coord(glm::vec2(x,y), glm::vec2(0,0)));
     }
     unsigned getLength(){
         return snake.size();
@@ -49,40 +75,53 @@ public:
     }
     void add(){
         GLfloat rads = glm::radians(dir);
-        Coord newCoords = Coord(-glm::cos(rads)*snake.size()*0.06,-glm::sin(rads)*snake.size()*0.06);
-        Coord lastChunk = snake.back();
 
-        newCoords.changeDirectionForce(lastChunk.pos-newCoords.pos);
+        Coord& last = snake.back();
+        Coord chunk(last.pos + glm::vec2(diff,0),glm::vec2(last.pos));
 
-        snake.push_back(newCoords);
-        //hop(x,y);
+        snake.push_back(chunk);
     }
 
-    void hop(){
-        Coord head = snake.front();
-        GLfloat rads = glm::radians(dir);
-        Coord newChunk = Coord(glm::cos(rads)*0.003+head.pos.x,glm::sin(rads)*0.003+head.pos.y);
+    void hop(float step_n=0.0003f){
+        Coord &head = snake.front(); //never use head.dir
+        GLfloat rads = glm::radians(dir);  //direction of new step
 
-        float ampl = glm::length(newChunk.pos-head.pos);
+        head.pos = head.pos + glm::vec2(glm::cos(rads),glm::sin(rads))*step_n;
+
+//        Coord newChunk(glm::cos(rads),glm::sin(rads));
+//        newChunk.pos =newChunk.pos*0.003f + head.pos;
+        //float ampl = glm::length(newChunk.pos-head.pos);
+        Coord lastChunck = head;
+
+        bool first = true;
+        for (auto & i : snake)
+        {
+            if (first) { first = false; continue; }
+
+            float m = i.getMaxDistance();
+            if (definitelyGreaterThan(m,step_n,1e-5)){
+                i.pos += i.unitStep()*step_n;
+            }
+            else if(definitelyGreaterThan(step_n,m,1e-5)){
+                i.pos = i.dir;
+                i.dir = lastChunck.pos;
+
+                if(definitelyGreaterThan( diff,i.getMaxDistance(),1e-5) ){
+                    i.pos += -i.unitStep()*(diff-i.getMaxDistance());
+
+                }
 
 
 
+                i.pos += i.unitStep()*(step_n-m);
+            }
 
-        for (auto & i : snake){
-              Coord newt(i.dir.x,i.dir.y);
-              newt.changeDirection(newChunk.pos - i.pos);
-              newt.normalize();
-
-              newt.pos = newt.pos*ampl+i.pos;
-//            Coord temp2 = Coord(i.x,i.y);
-//            i.x= temp.x;
-//            i.y= temp.y;
-//            temp.x = temp2.x;
-//            temp.y= temp2.y;
-              std::swap(i,newt);
+            lastChunck=i;
         }
 
-
+//        for (auto & i : snake){
+//                std::swap(i,newChunk);
+//        }
 
 
     }
