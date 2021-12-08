@@ -1,25 +1,35 @@
 #version 430 core
 
 //uniform float  uScale;
-//uniform mat4 MVP;
+uniform mat4 MVP;
 
 layout( quads, equal_spacing, ccw)  in;
 
-patch in float tcuRadius;
+patch in float tcRadius;
+patch in vec3 tcCenter;
+patch in float tcColor;
+
+out float fragColor;
 
 const float PI = 3.14159265;
 
 void main( )
 {
+    fragColor = tcColor;
+    vec3 p = gl_in[0].gl_Position.xyz;
+
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 
-    //float phi = 2. * PI * u;
-    //float theta = 2. * PI * v;
+    u= PI * ( u - .5 );
+    v = 2. * PI * ( v - .5 );
 
-    //float costheta = cos(theta);
-    //vec3 xyz = vec3( cos(phi)*(tcvRadius*costheta+tcuRadius), sin(phi)*(tcvRadius*costheta+tcuRadius), tcvRadius*sin(theta) );
-    vec3 xyz =vec3(u,v,0);
+    //float costheta = cos(phi);
+    //xyz *= ( uScale * tcRadius );
+    //xyz += tcCenter;
 
-    gl_Position = vec4( xyz,1. );
+    vec3 xyz = vec3( v*cos(u)/16, v*sin(u)/16,0);
+
+    xyz += tcCenter;
+    gl_Position = MVP * vec4( xyz,1. );
 }

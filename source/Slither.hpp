@@ -85,7 +85,7 @@ public:
         snake.push_back(chunk);
     }
 
-    void hop(float step_n=0.0003f){
+    void hop(float step_n=0.003f){
         Coord &head = snake.front(); //never use head.dir
         GLfloat rads = glm::radians(dir);  //direction of new step
 
@@ -135,13 +135,15 @@ public:
         return true;
     }
     std::vector<GLfloat> getCoords(){
+        GLfloat i = 1;
         std::vector<GLfloat> T;
         for(const auto& c: snake){
             T.push_back(c.pos.x);
             T.push_back(c.pos.y);
-            //T.push_back(c.z);
+            T.push_back(c.z);
             T.push_back(radius);
-            T.push_back(radius);
+            T.push_back(i);
+            i++;
         }
         return T;
     }

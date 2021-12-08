@@ -46,6 +46,7 @@ GLuint sub_width = 500, sub_height = 500;
 GLuint VAO;
 GLuint programID;
 GLuint MVPMatrixID;
+GLuint ColorID;
 
 glm::mat4 projection; 
 Shader s;
@@ -220,9 +221,9 @@ bool init_data()
 	}
 
 	// Get a handle for our "MVP" uniform for later when drawing...
-	//MVPMatrixID = glGetUniformLocation(programID, "MVP");
+	MVPMatrixID = glGetUniformLocation(programID, "MVP");
+    ColorID = glGetUniformLocation(programID, "clr");
 
-    glPointSize(5.0);
 
 
 	return true;
@@ -243,26 +244,12 @@ void myDisplay() {
     glm::mat4 mvp = view * model;
 
     //DATA POINTS
-//    glGenVertexArrays(1, &VAO);
-//    glBindVertexArray(VAO);
-//    const std::vector<GLfloat> my_data = sl.getCoords();
-//    GLuint VBO;
-//    glGenBuffers(1, &VBO);
-//    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * sl.getLength() * 3, &my_data[0], GL_DYNAMIC_DRAW);
-//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
-//
-//
-//    glEnableVertexAttribArray(0);
-//
-//    glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
-//    //glDrawArrays(GL_TRIANGLES, 0, 9); // Starting from vertex 0; 9 vertices total -> 3 triangles
-//    glDrawArrays(GL_POINTS, 0, sl.getLength());
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-    glEnableVertexAttribArray(0);
-    const std::vector<GLfloat> my_data = { 2.0f, 25.0f, 0.5f, 8.0f};
+
+    const std::vector<GLfloat> my_data = sl.getCoords();
+    //const std::vector<GLfloat> my_data = { 0.5f, -0.5f, 0.5f, 8.0f};
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -272,26 +259,32 @@ void myDisplay() {
             4,                  // size
             GL_FLOAT,           // type
             GL_FALSE,           // normalized?
-            0,                  // stride
+            sizeof(GLfloat)*5,                  // stride
             (void*)0            // array buffer offset
     );
+    glVertexAttribPointer(
+            1,                  // attribute 0.
+            1,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            sizeof(GLfloat)*5,                  // stride
+            (const GLvoid *)(sizeof(GLfloat) * 4)            // array buffer offset
+    );
 
+
+
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     s.use();
 
-    //glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL); //GL_LINE
     glPatchParameteri(GL_PATCH_VERTICES,1);
-    glDrawArrays(GL_PATCHES,0,1);
-
-
-
+    glDrawArrays(GL_PATCHES,0,my_data.size()/4);
+//  glDrawArrays(GL_POINTS, 0, sl.getLength());
     glDisableVertexAttribArray(0);
-//	glDisableVertexAttribArray(1);
-
-//	if ( RunMode==1 ) {
-//		glutPostRedisplay();	// Trigger an automatic redraw for animation
-//	}
     glutSwapBuffers();
     glutPostRedisplay();
 }

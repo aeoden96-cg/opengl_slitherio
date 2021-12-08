@@ -2,20 +2,27 @@
 
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec4 vertexPosition_modelspace; 
-//layout(location = 1) in vec4 vertexColor;
+layout(location = 1) in float vertexColor;
 
 // Output data; will be interpolated for each fragment.
-//out vec4 fragmentColor;
+out float tessColor;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
 
+// Output data for Tessellation shader.
+out vec3 vCenter;
+out float vRadius;
+
+
 void main(){
 
-    gl_Position = vertexPosition_modelspace;
+    vCenter = vertexPosition_modelspace.xyz ;
+    vRadius = vertexPosition_modelspace.w;
 
-    // U fragmentColor samo zapisi primljeni vertexColor; interpoliranu vrijednost te varijable cemo
-    // potom primiti u fragmentshaderu pod istim imenom (tamo je moramo tako deklarirati)
-    //fragmentColor = vertexColor;
+    tessColor = vertexColor;
+
+    //gl_Position = vertexPosition_modelspace - vec4(1,1,0,0);
+
 }
 
