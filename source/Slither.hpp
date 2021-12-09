@@ -54,7 +54,7 @@ struct Coord{
 class Slither{
 private:
 
-    float radius = 0.2;
+    float radius =  1/16.0;
     GLfloat dir = 0;
     const float diff;
 
@@ -71,10 +71,20 @@ public:
     glm::vec3 head(){
         return {snake.front().pos.x,snake.front().pos.y,snake.front().z};
     }
+    float getDirection(){
+        return glm::radians(dir);
+    }
     void changeDirection(GLfloat fi){
-        if(fi > 360) fi -=360;
-        if(fi < 0) fi+=360;
-        dir=fi;
+//        if(fi > 360) fi -=360;
+//        if(fi < 0) fi+=360;
+
+        if (dir > fi) dir--;
+        else if (dir == fi) ;
+        else dir ++;
+//
+//        if(dir > 360) dir -=360;
+//        if(dir < 0) dir+=360;
+
     }
     void add(){
         GLfloat rads = glm::radians(dir);
@@ -86,6 +96,8 @@ public:
     }
 
     void hop(float step_n=0.003f){
+        //step_n = diff;
+
         Coord &head = snake.front(); //never use head.dir
         GLfloat rads = glm::radians(dir);  //direction of new step
 
@@ -101,20 +113,30 @@ public:
         {
             if (first) { first = false; continue; }
 
+            if(i.pos.x != i.pos.x){
+                std::cout << this->toString();
+                throw std::exception();
+            }
+
+
             float m = i.getMaxDistance();
+
+            //if next safe is safe to do (step is smaller than distance to chunks destination)
             if (definitelyGreaterThan(m,step_n,1e-5)){
                 i.pos += i.unitStep()*step_n;
             }
+
+            //chunks destination is less than current step
+            //chunk has to travel = to destination + some fraction left from "step length n"
             else if(definitelyGreaterThan(step_n,m,1e-5)){
                 i.pos = i.dir;
                 i.dir = lastChunck.pos;
-
+                //if distance to next destination is smaller than it should be
                 if(definitelyGreaterThan( diff,i.getMaxDistance(),1e-5) ){
-                    i.pos += -i.unitStep()*(diff-i.getMaxDistance());
+                        // i.pos += -i.unitStep()*abs(diff-i.getMaxDistance());
+                        //i.dir += i.unitStep()*abs(diff-i.getMaxDistance());
 
                 }
-
-
 
                 i.pos += i.unitStep()*(step_n-m);
             }
@@ -128,10 +150,9 @@ public:
 
 
     }
-    bool cutTail(unsigned x){
-        if(x >= snake.size()) return false;
-        for (int i=0;i<x;i++)
-            snake.pop_back();
+    bool cutTail(){
+        if (snake.size() <=1 ) return false;
+        snake.pop_back();
         return true;
     }
     std::vector<GLfloat> getCoords(){
@@ -166,7 +187,7 @@ public:
         std::stringstream s;
         s << "**Snake**[";
         for (auto &chunk :snake)
-            s << chunk.toString()<<"-";
+            s << chunk.toString()<<",";
         s << "]\n";
         s<< "Front: " << snake.front().toString() << "\n";
         s<< "Back: " << snake.back().toString() << "\n";

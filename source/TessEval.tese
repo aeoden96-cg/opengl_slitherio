@@ -1,6 +1,6 @@
 #version 430 core
 
-//uniform float  uScale;
+uniform float  uScale;
 uniform mat4 MVP;
 
 layout( quads, equal_spacing, ccw)  in;
@@ -28,7 +28,7 @@ void main( )
     //xyz *= ( uScale * tcRadius );
     //xyz += tcCenter;
 
-    vec3 xyz = vec3( v*cos(u)/16, v*sin(u)/16,0);
+    vec3 xyz = vec3( v*cos(u)*tcRadius, v*sin(u)*tcRadius,0);
 
     xyz += tcCenter;
     gl_Position = MVP * vec4( xyz,1. );
