@@ -88,6 +88,7 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
             //search for extension
 
         } else {
+            if (shader_codes[i] == GL_TESS_CONTROL_SHADER) usingTess = true;
             //given explicit path name
             shaders[shader_codes[i]]=shaderPath;
         }

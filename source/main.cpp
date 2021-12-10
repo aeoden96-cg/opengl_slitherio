@@ -37,7 +37,133 @@ glm::vec2 mousePos(0,0);
 glm::mat4 projection;
 
 Shader s;
+Shader s_background;
 Slither sl(0,0,0.1f);
+
+struct Background{
+    std::vector<GLfloat> points;
+
+    float offsets[3] = {-1,0,1};
+
+    std::vector<GLfloat> update(glm::vec3 position){
+        points.clear();
+        position.x = glm::round(position.x);
+        position.y = glm::round(position.y);
+
+        for(float i: offsets){
+            for(float j: offsets){
+                points.push_back(position.x+i);
+                points.push_back(position.y+j);
+                points.push_back(position.z);
+            }
+        }
+        return points;
+    }
+};
+Background b;
+
+glm::mat4 addView(glm::mat4 model){
+    glm::mat4 view = glm::lookAt(
+            sl.head()+glm::vec3(0,0,1),
+            sl.head(),
+            glm::vec3(0,1,0)
+    );
+    return view * model;
+}
+glm::mat4 createMVPEye(glm::vec3 localEyePosition){
+    glm::mat4 model(1.0f);
+
+    model = glm::translate (model, sl.head());
+
+    model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
+    model = glm::translate (model, localEyePosition);
+
+    model = glm::rotate (model,
+                         glm::atan(mousePos.y,mousePos.x)-sl.getDirection(),
+                         glm::vec3(0,0,1));
+
+    return addView(model);
+}
+glm::mat4 createMVPBody(){
+    glm::mat4 model = glm::mat4(1.0f);
+    return addView(model);
+}
+
+class Renderer{
+
+
+
+    void enableVA(int numOfInputAttributes) const{
+        glEnableVertexAttribArray(0);
+        if(numOfInputAttributes > 1)
+            glEnableVertexAttribArray(1);
+    }
+    void disableVA(int numOfInputAttributes) const{
+        glDisableVertexAttribArray(0);
+        if(numOfInputAttributes > 1)
+            glDisableVertexAttribArray(1);
+
+    }
+public:
+    Renderer(){
+    }
+
+
+    void setupData(const std::vector<GLfloat>& my_data,int positionWidth,int colorWidth){
+        GLuint VAO;
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+        GLuint VBO;
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*my_data.size(),  &my_data[0], GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(
+                0,                                              // attribute 0.
+                positionWidth,                                  // size
+                GL_FLOAT,                                       // type
+                GL_FALSE,                                       // normalized?
+                sizeof(GLfloat)*(positionWidth+colorWidth),     // stride
+                (void*)nullptr                                  // array buffer offset
+        );
+
+        //color
+        if (colorWidth == 0) return;
+        glVertexAttribPointer(
+                1,                                              // attribute 1.
+                colorWidth,
+                GL_FLOAT,
+                GL_FALSE,
+                sizeof(GLfloat)*(positionWidth+colorWidth),
+                (const GLvoid *)(sizeof(GLfloat) * positionWidth)
+        );
+    }
+
+
+    void draw(glm::mat4& mvp,int count,Shader& current_shader,int numOfInputAttributes){
+        enableVA(numOfInputAttributes);
+        current_shader.setMat4("MVP" ,&mvp[0][0]);
+
+        if(!current_shader.isUsingTess())
+            glDrawArrays(GL_POINTS,0,count);
+        else{
+            glPatchParameteri(GL_PATCH_VERTICES,1);
+            glDrawArrays(GL_PATCHES,0,count);
+        }
+        disableVA(numOfInputAttributes);
+    }
+
+    void render(Shader& current_shader,
+                int positionWidth,
+                int colorWidth,
+                const std::vector<GLfloat>& data,
+                glm::mat4& mvp){
+
+        current_shader.use();
+        this->setupData(data,positionWidth,colorWidth);
+        this->draw(mvp,data.size()/(positionWidth+colorWidth),current_shader,1 + !!colorWidth);
+    }
+
+};
 
 bool init_data();
 
@@ -159,197 +285,63 @@ bool init_data()
 	std::cout << "Going to load programs... " << std::endl << std::flush;
 
 	s.load_shaders({
-        "SimpleVertexShader.vert",
-        "SimpleFragmentShader.frag",
-        "" ,
-        "TessControl.tesc" ,
-        "TessEval.tese"});
+            "SnakeVertexShader.vert",
+            "SnakeFragmentShader.frag",
+            "" ,
+            "SnakeTessControl.tesc" ,
+            "SnakeTessEval.tese"
+    });
+
+    s_background.load_shaders({
+          "BackgroundVertexShader.vert",
+          "BackgroundFragmentShader.frag",
+          "BackgroundGeometryShader.geom" ,
+          "" ,
+          ""
+    });
 
 	return true;
 }
 
-struct Background{
-    std::vector<GLfloat> points;
-
-    std::vector<GLfloat> update(glm::vec3 position){
-        points.clear();
-        position.x = glm::round(position.x);
-        position.y = glm::round(position.y);
-
-        points.push_back(position.x);
-        points.push_back(position.y);
-        points.push_back(position.z);
-
-        points.push_back(position.x+1);
-        points.push_back(position.y);
-        points.push_back(position.z);
-
-        points.push_back(position.x);
-        points.push_back(position.y+1);
-        points.push_back(position.z);
-
-        points.push_back(position.x+1);
-        points.push_back(position.y+1);
-        points.push_back(position.z);
-
-        return points;
-    }
-
-};
-
-Background b;
-
-void setupData(const std::vector<GLfloat>& my_data,int positionWidth,int colorWidth){
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*my_data.size(),  &my_data[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(
-            0,                                              // attribute 0.
-            positionWidth,                                  // size
-            GL_FLOAT,                                       // type
-            GL_FALSE,                                       // normalized?
-            sizeof(GLfloat)*(positionWidth+colorWidth),     // stride
-            (void*)nullptr                                  // array buffer offset
-    );
-
-    //color
-    if (colorWidth == 0) return;
-    glVertexAttribPointer(
-            1,                                              // attribute 1.
-            colorWidth,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(GLfloat)*(positionWidth+colorWidth),
-            (const GLvoid *)(sizeof(GLfloat) * positionWidth)
-    );
-}
-void draw(glm::mat4& mvp,int eyes){
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    //float scale;
-    int patchLen;
-    int patchBegin;
-    switch ( eyes){
-        case 1: //eyes
-            //scale = 1/50.0;
-            patchLen = 2;
-            patchBegin=0;
-            break;
-
-        case 3: //body
-            //scale = 1/16.0;
-            patchLen = sl.getLength();
-            patchBegin=0;
-            break;
-    }
-
-    s.setMat4("MVP" ,&mvp[0][0]);
-    //s.setFloat("uScale",scale);
-    s.setInt("eyes" , eyes);
-
-    //glPolygonMode(GL_FRONT_AND_BACK,GL_FILL); //GL_LINE
-    glPatchParameteri(GL_PATCH_VERTICES,1);
-    glDrawArrays(GL_PATCHES,patchBegin,patchLen);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-}
-
-glm::mat4 createModelBody(){
-    glm::mat4 model = glm::mat4(1.0f);
-    //model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
-
-    return model;
-}
-
-glm::mat4 addView(glm::mat4 model){
-    glm::mat4 view = glm::lookAt(
-            sl.head()+glm::vec3(0,0,1),
-            sl.head(),
-            glm::vec3(0,1,0)
-    );
-    return view * model;
-}
-glm::mat4 createModelEye(glm::vec3 localEyePosition){
-    glm::mat4 model(1.0f);
-
-    model = glm::translate (model, sl.head());
-
-    model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
-    model = glm::translate (model, localEyePosition);
-
-    model = glm::rotate (model,
-                         glm::atan(mousePos.y,mousePos.x)-sl.getDirection(),
-                         glm::vec3(0,0,1));
-
-    return model;
-}
-
-glm::mat4 setupMatrixEyes(bool black){
-    glm::mat4 model = glm::mat4(1.0f);
-
-    if (black){
-        model = glm::translate (model, sl.head());
-        model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
 
 
-    }
-    else{
-        model = glm::translate (model, sl.head());
-        model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
-    }
 
-    glm::mat4 view(1.0f);
-    view = glm::lookAt(
-            sl.head()+glm::vec3(0,0,1),
-            sl.head(),
-            glm::vec3(0,1,0)
-    );
-    glm::mat4 mvp = view * model;
 
-    return mvp;
-}
-
+Renderer r;
 void myDisplay() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     sl.changeDirection(glm::degrees(glm::atan(mousePos.y,mousePos.x)));
-
-    s.use();
-
     sl.hop();
 
     const std::vector<GLfloat> my_data = sl.getCoords();
     const std::vector<GLfloat> eye{
-                    0.02,0.0,0,1/70.0,400,
-                    0.0,0.0,0,1/50.0,300
-                                   };
-
+                    0.02,   0.0,    0,  1/70.0, 400,
+                    0.0,    0.0,    0,  1/50.0, 300 };
     const std::vector<GLfloat> background_data = b.update(sl.head());
 
-    setupData(eye,4,1);
+
     //first eye
-    glm::mat4 model = createModelEye(glm::vec3(0.1,0.1,0));
-    glm::mat4 mvp = addView(model);
-    draw(mvp,1);
-    //second exe
-    model = createModelEye(glm::vec3(0.1,-0.1,0));
-    mvp = addView(model);
-    draw(mvp,1);
+    s.setInt("eyes" , 1);
+    glm::mat4 mvp = createMVPEye(glm::vec3(0.1, 0.1, 0));
+    r.render(s,4,1,eye,mvp);
+
+    //second eye
+    mvp = createMVPEye(glm::vec3(0.1, -0.1, 0));
+    s.setInt("eyes" , 1);
+    // could be using this, setupData doesnt need to be used twice
+    //r.draw(mvp,2,s,2);
+    r.render(s,4,1,eye,mvp);
 
     //body
-    setupData(my_data,4,1);
-    model = createModelBody();
-    mvp = addView(model);
-    draw(mvp,3);
+    mvp = createMVPBody();
+    s.setInt("eyes" , 3);
+    r.render(s,4,1,my_data,mvp);
 
-
+    //background
+    mvp = createMVPBody();
+    r.render(s_background,3,0,background_data,mvp);
 
 
     glutSwapBuffers();

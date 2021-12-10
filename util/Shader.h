@@ -24,10 +24,13 @@ class Shader
 {
 public:
     unsigned int ID{};
+    bool usingTess = false;
 
     Shader();
     unsigned int load_shaders(std::initializer_list<std::string> l);
-
+    bool isUsingTess(){
+        return usingTess;
+    }
 
     // activate the shader
     // ------------------------------------------------------------------------
