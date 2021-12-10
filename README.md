@@ -1,4 +1,4 @@
-# cg_slitherio_project
+# OpenGL SlitherIo
 
 Snake moves in direction of a mouse, 
 snakes eyes gradually move in a direction of a mouse 
