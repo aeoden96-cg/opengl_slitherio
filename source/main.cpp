@@ -33,6 +33,7 @@ int WindowWidth;
 const double Xmin = 0.0, Xmax = 3.0;
 const double Ymin = 0.0, Ymax = 3.0;
 glm::vec2 mousePos(0,0);
+
 glm::mat4 projection;
 
 Shader s;
@@ -50,10 +51,6 @@ void glutPassiveMotionFunc(int x, int y ) {
 
     mousePos.x = xPos;
     mousePos.y = yPos;
-
-
-
-    sl.changeDirection(glm::degrees(glm::atan(yPos,xPos)));
 
 
     glutPostRedisplay();
@@ -171,80 +168,128 @@ bool init_data()
 	return true;
 }
 
-void setupData(const std::vector<GLfloat>& my_data){
+struct Background{
+    std::vector<GLfloat> points;
+
+    std::vector<GLfloat> update(glm::vec3 position){
+        points.clear();
+        position.x = glm::round(position.x);
+        position.y = glm::round(position.y);
+
+        points.push_back(position.x);
+        points.push_back(position.y);
+        points.push_back(position.z);
+
+        points.push_back(position.x+1);
+        points.push_back(position.y);
+        points.push_back(position.z);
+
+        points.push_back(position.x);
+        points.push_back(position.y+1);
+        points.push_back(position.z);
+
+        points.push_back(position.x+1);
+        points.push_back(position.y+1);
+        points.push_back(position.z);
+
+        return points;
+    }
+
+};
+
+Background b;
+
+void setupData(const std::vector<GLfloat>& my_data,int positionWidth,int colorWidth){
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
     GLuint VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*my_data.size(),  &my_data[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*my_data.size(),  &my_data[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(
-            0,                  // attribute 0.
-            4,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            sizeof(GLfloat)*5,  // stride
-            (void*)nullptr            // array buffer offset
+            0,                                              // attribute 0.
+            positionWidth,                                  // size
+            GL_FLOAT,                                       // type
+            GL_FALSE,                                       // normalized?
+            sizeof(GLfloat)*(positionWidth+colorWidth),     // stride
+            (void*)nullptr                                  // array buffer offset
     );
+
+    //color
+    if (colorWidth == 0) return;
     glVertexAttribPointer(
-            1,                  // attribute 0.
-            1,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            sizeof(GLfloat)*5,  // stride
-            (const GLvoid *)(sizeof(GLfloat) * 4)  // array buffer offset
+            1,                                              // attribute 1.
+            colorWidth,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(GLfloat)*(positionWidth+colorWidth),
+            (const GLvoid *)(sizeof(GLfloat) * positionWidth)
     );
 }
 void draw(glm::mat4& mvp,int eyes){
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    float scale;
+    //float scale;
     int patchLen;
     int patchBegin;
     switch ( eyes){
-        case 1: //white
-            scale = 1/50.0;
+        case 1: //eyes
+            //scale = 1/50.0;
             patchLen = 2;
             patchBegin=0;
             break;
 
-//        case 2: //black
-//            scale = 1/70.0;
-//            patchLen = 2;
-//            patchBegin=2;
-//            break;
-        case 3: //red other
-            scale = 1/16.0;
+        case 3: //body
+            //scale = 1/16.0;
             patchLen = sl.getLength();
             patchBegin=0;
             break;
     }
 
     s.setMat4("MVP" ,&mvp[0][0]);
-    s.setFloat("uScale",scale);
+    //s.setFloat("uScale",scale);
     s.setInt("eyes" , eyes);
 
     //glPolygonMode(GL_FRONT_AND_BACK,GL_FILL); //GL_LINE
     glPatchParameteri(GL_PATCH_VERTICES,1);
     glDrawArrays(GL_PATCHES,patchBegin,patchLen);
-    //glDrawArrays(GL_POINTS, 0, sl.getLength());
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
 
-glm::mat4 setupMatrix(){
+glm::mat4 createModelBody(){
     glm::mat4 model = glm::mat4(1.0f);
     //model = glm::translate (model,glm::vec3(1.5f, 1.5f, 0.0f));
-    glm::mat4 view(1.0f);
-    view = glm::lookAt(
+
+    return model;
+}
+
+glm::mat4 addView(glm::mat4 model){
+    glm::mat4 view = glm::lookAt(
             sl.head()+glm::vec3(0,0,1),
             sl.head(),
             glm::vec3(0,1,0)
-            );
-    glm::mat4 mvp = view * model;
-
-    return mvp;
+    );
+    return view * model;
 }
+glm::mat4 createModelEye(glm::vec3 localEyePosition){
+    glm::mat4 model(1.0f);
+
+    model = glm::translate (model, sl.head());
+
+    model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
+    model = glm::translate (model, localEyePosition);
+
+    model = glm::rotate (model,
+                         glm::atan(mousePos.y,mousePos.x)-sl.getDirection(),
+                         glm::vec3(0,0,1));
+
+    return model;
+}
+
 glm::mat4 setupMatrixEyes(bool black){
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -273,75 +318,39 @@ glm::mat4 setupMatrixEyes(bool black){
 void myDisplay() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    sl.changeDirection(glm::degrees(glm::atan(mousePos.y,mousePos.x)));
+
     s.use();
 
-
     sl.hop();
+
     const std::vector<GLfloat> my_data = sl.getCoords();
-//    const std::vector<GLfloat> eyes{0.1,0.1,0,0,0,
-//                                    0.1,-0.1,0,0,0,
-//                                    0.12,0.1,0,0,0,
-//                                    0.12,-0.1,0,0,0};
     const std::vector<GLfloat> eye{
                     0.02,0.0,0,1/70.0,400,
                     0.0,0.0,0,1/50.0,300
                                    };
-    setupData(eye);
-//    glm::mat4 mvp2 = setupMatrixEyes(true);
 
+    const std::vector<GLfloat> background_data = b.update(sl.head());
+
+    setupData(eye,4,1);
     //first eye
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate (model, sl.head());
-
-    model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
-    model = glm::translate (model, glm::vec3(0.1,0.1,0));
-
-    model = glm::rotate (model,
-                         glm::atan(mousePos.y,mousePos.x)-sl.getDirection(),
-                         glm::vec3(0,0,1));
-
-
-    glm::mat4 view(1.0f);
-    view = glm::lookAt(
-            sl.head()+glm::vec3(0,0,1),
-            sl.head(),
-            glm::vec3(0,1,0)
-    );
-    glm::mat4 mvp = view * model;
-
+    glm::mat4 model = createModelEye(glm::vec3(0.1,0.1,0));
+    glm::mat4 mvp = addView(model);
     draw(mvp,1);
-
-//    mvp2 = setupMatrixEyes(false);
     //second exe
-    model = glm::mat4(1.0f);
-    model = glm::translate (model, sl.head());
-
-    model = glm::rotate (model, sl.getDirection(),glm::vec3(0,0,1));
-    model = glm::translate (model, glm::vec3(0.1,-0.1,0));
-
-    model = glm::rotate (model,
-                         glm::atan(mousePos.y,mousePos.x)-sl.getDirection(),
-                         glm::vec3(0,0,1)
-    );
-
-
-    view = glm::lookAt(
-            sl.head()+glm::vec3(0,0,1),
-            sl.head(),
-            glm::vec3(0,1,0)
-    );
-    mvp = view * model;
+    model = createModelEye(glm::vec3(0.1,-0.1,0));
+    mvp = addView(model);
     draw(mvp,1);
 
-
-    //BODY
-    mvp = setupMatrix();
-    setupData(my_data);
+    //body
+    setupData(my_data,4,1);
+    model = createModelBody();
+    mvp = addView(model);
     draw(mvp,3);
 
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+
 
     glutSwapBuffers();
     glutPostRedisplay();

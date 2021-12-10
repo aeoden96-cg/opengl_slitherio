@@ -1,6 +1,6 @@
 #version 430 core
 
-uniform float  uScale;
+//uniform float  uScale;
 uniform mat4 MVP;
 
 layout( quads, equal_spacing, ccw)  in;

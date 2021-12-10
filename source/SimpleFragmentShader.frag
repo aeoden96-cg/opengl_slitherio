@@ -11,10 +11,10 @@ uniform int  eyes;
 
 void main()
 {
-	if (fragColor < 301 && fragColor > 299){
+	if (fragColor == 300){
 		color = vec4(1,1,1,0);
 	}
-	else if (fragColor < 401 && fragColor > 399){
+	else if (fragColor == 400){
 		color = vec4(0,0,0,0);
 	}
 	else{
