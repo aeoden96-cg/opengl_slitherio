@@ -11,6 +11,8 @@
 #include "util/Shader.h"
 #include "main.hpp"
 #include "Slither.hpp"
+#include "Background.hpp"
+#include "Renderer.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -37,27 +39,6 @@ glm::vec2 mousePos(0,0);
 Shader shader_snake;
 Shader shader_background;
 Slither snake(0, 0, 0.1f);
-
-struct Background{
-    std::vector<GLfloat> points;
-
-    float offsets[3] = {-1,0,1};
-
-    std::vector<GLfloat> update(glm::vec3 position){
-        points.clear();
-        position.x = glm::round(position.x);
-        position.y = glm::round(position.y);
-
-        for(float i: offsets){
-            for(float j: offsets){
-                points.push_back(position.x+i);
-                points.push_back(position.y+j);
-                points.push_back(position.z);
-            }
-        }
-        return points;
-    }
-};
 Background background;
 
 
@@ -88,116 +69,6 @@ glm::mat4 createMVPBody(){
     return addView(model);
 }
 
-class Renderer{
-
-
-
-    static void enableVA(unsigned numOfInputAttributes) {
-        for (int i=0;i<numOfInputAttributes ; i++)
-            glEnableVertexAttribArray(i);
-
-    }
-    static void disableVA(unsigned numOfInputAttributes) {
-        for (int i=0;i<numOfInputAttributes ; i++)
-            glDisableVertexAttribArray(i);
-
-    }
-
-
-
-    /**
-     * Sends data to GPU.
-     * @param points All data points organised AS SHOWN in 'positions'.
-     * @param positions Shows how data points are organised by attribute.For example,
-     *  (1,3) means first attribute has 1 dimension, second has 3.
-     */
-    static void setupData(const std::vector<GLfloat>& points, const std::vector<int>& positions){
-
-        unsigned short W = std::accumulate(positions.begin(), positions.end(), 0);
-
-        GLuint VAO;
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-        GLuint VBO;
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, (unsigned)(sizeof(GLfloat) * points.size()), &points[0], GL_DYNAMIC_DRAW);
-        int i=0;
-        unsigned short formerAttribs=0;
-        for (auto& currentAttrib : positions)
-        {
-            glVertexAttribPointer(
-                    i,                                              //i.th attribute
-                    currentAttrib,                                  //num of dimensions for ith attrib
-                    GL_FLOAT,
-                    GL_FALSE,
-                    (int)(sizeof(GLfloat)*W),                            //width of one row
-                    (const GLvoid *)(sizeof(GLfloat) * formerAttribs)   //offset
-            );
-            formerAttribs+=currentAttrib;
-            i++;
-        }
-    }
-
-
-    /**
-     * Draws ONE instance of each of n='count' points.
-     * It also enables/disables each attribute for that data set.
-     * @param mvp
-     * @param count
-     * @param current_shader
-     * @param numOfInputAttributes
-     */
-    static void draw(const glm::mat4& mvp,unsigned count,Shader& current_shader,unsigned numOfInputAttributes){
-        enableVA(numOfInputAttributes);
-
-        current_shader.setMat4("MVP" ,&mvp[0][0]);
-
-        if(!current_shader.isUsingTess())
-            glDrawArrays(GL_POINTS,0,(int)count);
-        else{
-            glPatchParameteri(GL_PATCH_VERTICES,1);
-            glDrawArrays(GL_PATCHES,0,(int)count);
-        }
-
-        disableVA(numOfInputAttributes);
-    }
-public:
-    Renderer()= default;
-    /**
-     * Render points in this manner:
-     * for EVERY mvp in MVPs, draw ALL points from 'data'
-     * @param current_shader
-     * @param positions Show how attributes are organised. For example,
-     *  (1,3) means first attribute has 1 dimension, second has 3.
-     * @param data data organised AS SHOWN in 'positions'
-     * @param MVPs multiple MVP matrices,each represents instance of set of points
-     */
-    static void render(Shader& current_shader,
-                std::vector<int> positions,
-                const std::vector<GLfloat>& data,
-                std::vector<glm::mat4>& MVPs){
-
-
-
-        current_shader.use();
-
-        Renderer::setupData(data,positions);
-
-        int sum = std::accumulate(positions.begin(), positions.end(), 0);
-
-        for (const auto& mvp: MVPs){
-            Renderer::draw(mvp,
-                       data.size()/sum,   // = num of points to be rendered
-                       current_shader,
-                       positions.size());
-        }
-
-
-    }
-
-
-};
 
 void glutPassiveMotionFunc(int x, int y ) {
 

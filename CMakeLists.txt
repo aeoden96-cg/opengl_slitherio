@@ -15,7 +15,9 @@ ADD_EXECUTABLE(PROJECT
         source/main.cpp
         source/main.hpp
         source/Slither.cpp
-        source/Slither.hpp)
+        source/Slither.hpp
+        source/Background.cpp
+        source/Background.hpp source/Renderer.cpp source/Renderer.hpp)
 
 include_directories(
 ${OPENGL_INCLUDE_DIRS}
@@ -27,7 +29,7 @@ target_link_libraries(
             SHADER
             ${OPENGL_LIBRARIES}
             ${GLUT_LIBRARY}
-            ${GLEW_LIBRARIES} -lpthread -lm)
+            ${GLEW_LIBRARIES} -lpthread -lm -lGL -lGLU -lglut)
 
 file(GLOB MY_SHADERS "source/*.tesc" "source/*.tese" "source/*.vert" "source/*.frag" "source/*.geom")
 foreach(shader ${MY_SHADERS})
