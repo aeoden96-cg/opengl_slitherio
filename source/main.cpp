@@ -42,6 +42,13 @@ Slither snake(0, 0, 0.1f);
 Background background;
 
 
+/**
+ * View matrix:
+ * We always look at the head of a snake,
+ * eye is also at the head.
+ * @param model model matrix
+ * @return returns view * model matrix
+ */
 glm::mat4 addView(glm::mat4 model){
     glm::mat4 view = glm::lookAt(
             snake.head() + glm::vec3(0, 0, 1),
@@ -50,6 +57,18 @@ glm::mat4 addView(glm::mat4 model){
     );
     return view * model;
 }
+
+/**
+ * Models for the eyes are constructed as follows:\n
+ * 1. Rotate the eye to the <position of the mouse - snake current orientation>\n
+ *    Snakes head will also move so we need it to cancel out. \n
+ * 2. Translate it to the right coordinates on the snakes head\n
+ * 3. Rotate eye in the direction that snake is oriented.\n
+ * 4. Translate it to position of the snake in world coordinates.\n
+ *
+ * @param localEyePosition position of the eye relative to the snakes head in local coordinates
+ * @return view * model matrix = final position and orientation of each eye
+ */
 glm::mat4 createMVPEye(glm::vec3 localEyePosition){
     glm::mat4 model(1.0f);
 
@@ -64,9 +83,13 @@ glm::mat4 createMVPEye(glm::vec3 localEyePosition){
 
     return addView(model);
 }
+
+/**
+ * Trivial.Just apply view matrix.
+ * @return
+ */
 glm::mat4 createMVPBody(){
-    glm::mat4 model = glm::mat4(1.0f);
-    return addView(model);
+    return addView(glm::mat4(1.0f));
 }
 
 

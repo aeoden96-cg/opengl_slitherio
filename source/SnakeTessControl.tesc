@@ -1,12 +1,9 @@
 #version 430 core
 
-//patch out float tcuRadius,tcvRadius,tcuDetail,tcvDetail;
-// tcuRadius=R, tcuDetail=podjela za phi, tcvRadius=r, tcvDetail=podjela za theta
 
 in float vRadius[ ];
 in vec3 vCenter[ ];
 in float tessColor[];
-
 
 patch out float tcRadius;
 patch out vec3 tcCenter;
@@ -21,6 +18,7 @@ void main( )
 {
 
     gl_out[gl_InvocationID].gl_Position = gl_in[0].gl_Position;
+
     tcCenter = vCenter[0];
     tcRadius = vRadius[0];
     tcColor= tessColor[0];

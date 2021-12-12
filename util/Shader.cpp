@@ -97,7 +97,7 @@ unsigned int Shader::load_shaders(std::initializer_list<std::string> l){
     }
     std::cout << "Number of shaders: " << shaders.size()<<std::endl;
     for (const auto& [shader_id, shader_path] : shaders) {
-        std::cout<< "     " << shader_id << shader_path <<std::endl;
+        //std::cout<< "     " << shader_id << shader_path <<std::endl;
 
     }
 

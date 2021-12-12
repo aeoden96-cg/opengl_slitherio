@@ -4,8 +4,7 @@ layout (points) in;
 layout (triangle_strip, max_vertices = 5) out;
 //out vec3 fragmentColor;
 
-// Uniform matrices
-uniform mat4 MVP;
+
 
 void romb(vec4 position)
 {
@@ -25,7 +24,7 @@ void romb(vec4 position)
 }
 void main(){
 
-	romb(MVP * gl_in[0].gl_Position);
+	romb(gl_in[0].gl_Position);
 
 	gl_Position = gl_in[0].gl_Position + vec4(0.4, 0, 0.0, 0.0);
 	EmitVertex();

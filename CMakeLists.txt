@@ -17,7 +17,7 @@ ADD_EXECUTABLE(PROJECT
         source/Slither.cpp
         source/Slither.hpp
         source/Background.cpp
-        source/Background.hpp source/Renderer.cpp source/Renderer.hpp)
+        source/Background.hpp source/Renderer.cpp source/Renderer.hpp source/FloatComparisons.hpp)
 
 include_directories(
 ${OPENGL_INCLUDE_DIRS}
