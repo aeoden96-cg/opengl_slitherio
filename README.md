@@ -5,6 +5,7 @@ Snake moves in direction of a mouse,
 snakes eyes gradually move in a direction of a mouse 
 while snakes pupils constantly follow it.
 
+
 Run project by running script ```run.sh``` from console, or by doing this:
 
     1. mkdir build
