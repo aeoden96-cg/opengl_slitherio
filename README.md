@@ -1,5 +1,5 @@
 # OpenGL SlitherIo
-![alt text](snake.png)
+![alt text](snake.gif)
 
 Snake moves in direction of a mouse, 
 snakes eyes gradually move in a direction of a mouse 
